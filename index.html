@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ふたり精算</title>
+  <style>
+    :root {
+      --bg: #f6f3ed;
+      --card: #fffaf2;
+      --text: #24211d;
+      --muted: #766f65;
+      --line: #e5dbcb;
+      --accent: #202020;
+      --accent-soft: #ece3d5;
+      --danger: #b3261e;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      background: radial-gradient(circle at top, #fff8ec 0, var(--bg) 42%, #eee7dc 100%);
+      font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", Meiryo, sans-serif;
+    }
+
+    .container {
+      width: min(960px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 56px;
+    }
+
+    .logo {
+      display: inline-flex;
+      padding: 7px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 250, 242, 0.72);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 14px 0 8px;
+      font-size: clamp(32px, 7vw, 56px);
+      letter-spacing: -0.06em;
+      line-height: 1;
+    }
+
+    .lead {
+      margin: 0 0 24px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(255, 250, 242, 0.82);
+      box-shadow: 0 18px 50px rgba(52, 41, 28, 0.08);
+      padding: 22px;
+    }
+
+    .label {
+      margin: 0 0 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .settlement-message {
+      margin: 0;
+      font-size: clamp(28px, 6vw, 48px);
+      font-weight: 800;
+      letter-spacing: -0.06em;
+      line-height: 1.08;
+    }
+
+    .amount-large {
+      display: block;
+      margin-top: 10px;
+      font-size: clamp(42px, 10vw, 80px);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .stat {
+      padding: 14px;
+      border-radius: 18px;
+      background: var(--accent-soft);
+    }
+
+    .stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .stat strong { font-size: 18px; }
+
+    form {
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 7px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: white;
+      padding: 12px 13px;
+      color: var(--text);
+      font: inherit;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-weight: 700;
+      font: inherit;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .secondary {
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+
+    .danger {
+      background: transparent;
+      color: var(--danger);
+      padding-inline: 8px;
+    }
+
+    .list-card { margin-top: 18px; }
+
+    .list-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .expense-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .expense-item {
+      display: grid;
+      grid-template-columns: 110px 1fr auto;
+      gap: 14px;
+      align-items: center;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.55);
+    }
+
+    .expense-date {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .expense-title {
+      font-weight: 800;
+    }
+
+    .expense-meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .expense-amount {
+      text-align: right;
+      font-weight: 900;
+      font-size: 20px;
+    }
+
+    .item-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .empty {
+      padding: 30px;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+    }
+
+    @media (max-width: 780px) {
+      .grid, .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .expense-item {
+        grid-template-columns: 1fr;
+      }
+
+      .expense-amount {
+        text-align: left;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <header>
+      <div class="logo">Futari Seisan / 共有出費精算</div>
+      <h1>ふたり精算</h1>
+      <p class="lead">
+        いつ、どこで、いくら使ったかだけを記録。今どちらがどちらにいくら渡せばよいかをすぐ確認できます。
+      </p>
+    </header>
+
+    <section class="grid">
+      <div class="card">
+        <p class="label">Current Balance</p>
+        <p class="settlement-message" id="settlementText">精算は不要です</p>
+
+        <div class="stats">
+          <div class="stat">
+            <span>共有出費合計</span>
+            <strong id="total">¥0</strong>
+          </div>
+          <div class="stat">
+            <span>自分の支払い</span>
+            <strong id="personAPaid">¥0</strong>
+          </div>
+          <div class="stat">
+            <span>相手の支払い</span>
+            <strong id="personBPaid">¥0</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 id="formTitle">出費を追加</h2>
+        <form id="expenseForm">
+          <div class="field">
+            <label for="date">日付</label>
+            <input id="date" type="date">
+          </div>
+          <div class="field">
+            <label for="title">場所・用途</label>
+            <input id="title" type="text" placeholder="例：スーパー、外食、日用品">
+          </div>
+          <div class="field">
+            <label for="amount">金額</label>
+            <input id="amount" type="number" inputmode="numeric" min="1" placeholder="例：4000">
+          </div>
+          <div class="field">
+            <label for="paidBy">支払った人</label>
+            <select id="paidBy">
+              <option value="personA">自分</option>
+              <option value="personB">相手</option>
+            </select>
+          </div>
+          <button class="primary" type="submit" id="submitButton">登録する</button>
+          <button class="secondary" type="button" id="cancelButton" style="display:none;">キャンセル</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="card list-card">
+      <div class="list-header">
+        <div>
+          <p class="label">History</p>
+          <h2>出費履歴</h2>
+        </div>
+        <button class="secondary" type="button" id="newButton">新規入力</button>
+      </div>
+      <div id="expenseList"></div>
+    </section>
+  </main>
+
+  <script>
+    const STORAGE_KEY = "futari-seisan-expenses-v1";
+    const personAName = "自分";
+    const personBName = "相手";
+
+    let expenses = [];
+    let editingId = null;
+
+    const yen = new Intl.NumberFormat("ja-JP", {
+      style: "currency",
+      currency: "JPY",
+      maximumFractionDigits: 0
+    });
+
+    const dateInput = document.getElementById("date");
+    const titleInput = document.getElementById("title");
+    const amountInput = document.getElementById("amount");
+    const paidByInput = document.getElementById("paidBy");
+    const form = document.getElementById("expenseForm");
+    const list = document.getElementById("expenseList");
+
+    function todayString() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function createId() {
+      if (crypto && crypto.randomUUID) return crypto.randomUUID();
+      return Date.now() + "-" + Math.random().toString(16).slice(2);
+    }
+
+    function load() {
+      try {
+        expenses = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch {
+        expenses = [];
+      }
+    }
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(expenses));
+    }
+
+    function resetForm() {
+      editingId = null;
+      dateInput.value = todayString();
+      titleInput.value = "";
+      amountInput.value = "";
+      paidByInput.value = "personA";
+      document.getElementById("formTitle").textContent = "出費を追加";
+      document.getElementById("submitButton").textContent = "登録する";
+      document.getElementById("cancelButton").style.display = "none";
+    }
+
+    function calculateSettlement() {
+      const total = expenses.reduce((sum, e) => sum + e.amount, 0);
+      const personAPaid = expenses.filter(e => e.paidBy === "personA").reduce((sum, e) => sum + e.amount, 0);
+      const personBPaid = expenses.filter(e => e.paidBy === "personB").reduce((sum, e) => sum + e.amount, 0);
+      const fairShare = total / 2;
+      const personAOverpaid = personAPaid - fairShare;
+
+      return {
+        total,
+        personAPaid,
+        personBPaid,
+        amount: Math.round(Math.abs(personAOverpaid)),
+        direction:
+          Math.abs(personAOverpaid) < 0.5
+            ? "SETTLED"
+            : personAOverpaid > 0
+              ? "B_TO_A"
+              : "A_TO_B"
+      };
+    }
+
+    function render() {
+      const s = calculateSettlement();
+
+      document.getElementById("total").textContent = yen.format(s.total);
+      document.getElementById("personAPaid").textContent = yen.format(s.personAPaid);
+      document.getElementById("personBPaid").textContent = yen.format(s.personBPaid);
+
+      if (s.direction === "SETTLED") {
+        document.getElementById("settlementText").textContent = "精算は不要です";
+      } else if (s.direction === "A_TO_B") {
+        document.getElementById("settlementText").innerHTML =
+          `${personAName} → ${personBName}へ<span class="amount-large">${yen.format(s.amount)}</span>`;
+      } else {
+        document.getElementById("settlementText").innerHTML =
+          `${personBName} → ${personAName}へ<span class="amount-large">${yen.format(s.amount)}</span>`;
+      }
+
+      const sorted = [...expenses].sort((a, b) => b.date.localeCompare(a.date));
+
+      if (sorted.length === 0) {
+        list.innerHTML = '<div class="empty">まだ出費が登録されていません。</div>';
+        return;
+      }
+
+      list.innerHTML = '<div class="expense-list">' + sorted.map(e => `
+        <article class="expense-item">
+          <div class="expense-date">${e.date}</div>
+          <div>
+            <div class="expense-title">${escapeHtml(e.title)}</div>
+            <div class="expense-meta">${e.paidBy === "personA" ? personAName : personBName}が支払い</div>
+          </div>
+          <div>
+            <div class="expense-amount">${yen.format(e.amount)}</div>
+            <div class="item-actions">
+              <button class="secondary" onclick="startEdit('${e.id}')">編集</button>
+              <button class="danger" onclick="deleteExpense('${e.id}')">削除</button>
+            </div>
+          </div>
+        </article>
+      `).join("") + "</div>";
+    }
+
+    function escapeHtml(text) {
+      return String(text)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    form.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const date = dateInput.value;
+      const title = titleInput.value.trim();
+      const amount = Math.round(Number(amountInput.value));
+      const paidBy = paidByInput.value;
+
+      if (!date || !title || !Number.isFinite(amount) || amount <= 0) {
+        alert("日付、場所・用途、金額を確認してください。");
+        return;
+      }
+
+      if (editingId) {
+        expenses = expenses.map(e =>
+          e.id === editingId ? { ...e, date, title, amount, paidBy } : e
+        );
+      } else {
+        expenses.push({ id: createId(), date, title, amount, paidBy });
+      }
+
+      save();
+      resetForm();
+      render();
+    });
+
+    window.startEdit = function(id) {
+      const e = expenses.find(item => item.id === id);
+      if (!e) return;
+
+      editingId = id;
+      dateInput.value = e.date;
+      titleInput.value = e.title;
+      amountInput.value = e.amount;
+      paidByInput.value = e.paidBy;
+
+      document.getElementById("formTitle").textContent = "出費を編集";
+      document.getElementById("submitButton").textContent = "更新する";
+      document.getElementById("cancelButton").style.display = "inline-block";
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    window.deleteExpense = function(id) {
+      if (!confirm("この出費を削除しますか？")) return;
+      expenses = expenses.filter(e => e.id !== id);
+      save();
+      resetForm();
+      render();
+    };
+
+    document.getElementById("cancelButton").addEventListener("click", () => {
+      resetForm();
+    });
+
+    document.getElementById("newButton").addEventListener("click", () => {
+      resetForm();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    });
+
+    dateInput.value = todayString();
+    load();
+    render();
+  </script>
+</body>
+</html>
