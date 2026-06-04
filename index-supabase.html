@@ -300,6 +300,8 @@
 
     input {
       width: 100%;
+      max-width: 100%;
+      min-width: 0;
       min-height: 52px;
       border: 1px solid var(--line-strong);
       border-radius: var(--radius-small);
@@ -309,6 +311,21 @@
       font-size: 16px;
       letter-spacing: -0.02em;
       outline: none;
+    }
+
+    input[type="date"] {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      text-align: left;
+      text-align-last: left;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="date"]::-webkit-date-and-time-value {
+      text-align: left;
     }
 
     input:focus {
